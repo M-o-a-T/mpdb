@@ -729,3 +729,11 @@ class Mpdb(Mbdb, Cmd):
             out_info = 'STOP ' + out_info
         print(out_info)
         self.cmdloop()
+
+_db = None
+
+def breakpoint():
+    global _db
+    if _db is None:
+        _db = Mpdb()
+    _db.set_trace()
