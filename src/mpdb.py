@@ -1,5 +1,5 @@
-import sys
 import gc
+import sys
 
 
 class MpdbQuit(Exception):
@@ -62,16 +62,18 @@ class Mbdb:
 
     def get_break(self, filename, lineno):
         """Return True if there is a breakpoint for filename:lineno."""
-        return filename in self.breaks \
-               and lineno in self.breaks[filename]
+        return filename in self.breaks and lineno in self.breaks[filename]
 
     def get_breaks(self, filename, lineno):
         """Return all breakpoints for filename:lineno.
         If no breakpoints are set, return an empty list.
         """
-        return filename in self.breaks \
-               and lineno in self.breaks[filename] \
-               and Breakpoint.bplist[filename, lineno] or []
+        return (
+            filename in self.breaks
+            and lineno in self.breaks[filename]
+            and Breakpoint.bplist[filename, lineno]
+            or []
+        )
 
     def break_here(self, frame):
         filename = frame.f_code.co_filename
@@ -130,8 +132,8 @@ class Mbdb:
 
     def set_continue(self):
         """Stop only at breakpoints or when finished.
-                If there are no breakpoints, set the system trace function to None.
-                """
+        If there are no breakpoints, set the system trace function to None.
+        """
         # Don't stop except at breakpoints or when finished
         self._set_stopinfo(self.botframe, None, -1)
         if not self.breaks:
@@ -299,7 +301,7 @@ class Breakpoint:
     single instance of class Breakpoint.  The latter points to a
     list of such instances since there may be more than one
     breakpoint per line.
-	A conditional breakpoint always counts a hit.
+        A conditional breakpoint always counts a hit.
     """
 
     # XXX Keeping state in the class is a mistake -- this means
@@ -374,8 +376,7 @@ class Breakpoint:
             disp = disp + 'yes  '
         else:
             disp = disp + 'no   '
-        ret = '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
-                                                self.file, self.line)
+        ret = '%-4dbreakpoint   %s at %s:%d' % (self.number, disp, self.file, self.line)
         if self.cond:
             ret += '\n\tstop only if %s' % (self.cond,)
         if self.ignore:
@@ -393,7 +394,6 @@ class Breakpoint:
         return 'breakpoint %s at %s:%s' % (self.number, self.file, self.line)
 
 
-    
 # Adapted from: https://github.com/micropython/micropython-lib/blob/master/cmd/cmd.py
 class Cmd:
     IDENTCHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
@@ -530,13 +530,17 @@ class Cmd:
 
 
 def print_stacktrace(frame, level=0):
-    print("%2d: %s@%s:%s => %s:%d" % (
-        level, "  ",
-        frame.f_globals['__name__'],
-        frame.f_code.co_name,
-        frame.f_code.co_filename,
-        frame.f_lineno,
-    ))
+    print(
+        "%2d: %s@%s:%s => %s:%d"
+        % (
+            level,
+            "  ",
+            frame.f_globals['__name__'],
+            frame.f_code.co_name,
+            frame.f_code.co_filename,
+            frame.f_lineno,
+        )
+    )
 
     if frame.f_back:
         print_stacktrace(frame.f_back, level + 1)
@@ -557,7 +561,7 @@ class Mpdb(Mbdb, Cmd):
         comma = arg.find(',')
         if comma > 0:
             # parse stuff after comma: "condition"
-            cond = arg[comma + 1:].lstrip()
+            cond = arg[comma + 1 :].lstrip()
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
@@ -565,7 +569,7 @@ class Mpdb(Mbdb, Cmd):
         if colon >= 0:
             filename = arg[:colon].rstrip()
             print(filename)
-            arg = arg[colon + 1:].lstrip()
+            arg = arg[colon + 1 :].lstrip()
             try:
                 lineno = int(arg)
             except ValueError:
@@ -595,7 +599,7 @@ class Mpdb(Mbdb, Cmd):
             # Make sure it works for "clear C:\foo\bar.py:12"
             i = arg.rfind(':')
             filename = arg[:i]
-            arg = arg[i + 1:]
+            arg = arg[i + 1 :]
             try:
                 lineno = int(arg)
             except ValueError:
@@ -675,8 +679,7 @@ class Mpdb(Mbdb, Cmd):
                 self.error('Error in argument: %r' % arg)
                 return
             if lineno <= self.curframe.f_lineno:
-                self.error('"until" line number is smaller than current '
-                           'line number')
+                self.error('"until" line number is smaller than current ' 'line number')
                 return
         else:
             lineno = None
@@ -712,7 +715,9 @@ class Mpdb(Mbdb, Cmd):
 
     def do_collect(self, arg):
         gc.collect()
-        print('Garbage Collected!', )
+        print(
+            'Garbage Collected!',
+        )
 
     def do_p(self, arg):
         repr(self._getval(arg))
@@ -730,7 +735,9 @@ class Mpdb(Mbdb, Cmd):
         print(out_info)
         self.cmdloop()
 
+
 _db = None
+
 
 def breakpoint():
     global _db
