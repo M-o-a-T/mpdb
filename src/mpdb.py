@@ -151,7 +151,7 @@ class Mbdb:
         bp_list = self.breaks.setdefault(filename, [])
         if lineno not in bp_list:
             bp_list.append(lineno)
-        bp = Breakpoint(filename, lineno, temporary, cond)
+        Breakpoint(filename, lineno, temporary, cond)
         return None
 
     def set_quit(self):
@@ -283,7 +283,7 @@ def effective(file, line, frame):
                         return b, True
                 # else:
                 #   continue
-            except:
+            except Exception:
                 # if eval fails, most conservative thing is to stop on
                 # breakpoint regardless of ignore count.  Don't delete
                 # temporary, as another hint to user.
@@ -565,7 +565,6 @@ class Mpdb(Mbdb, Cmd):
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
-        funcname = None
         if colon >= 0:
             filename = arg[:colon].rstrip()
             print(filename)
@@ -727,7 +726,7 @@ class Mpdb(Mbdb, Cmd):
 
     def user_line(self, frame):
         out_info = '{}:{}'.format(frame.f_code.co_filename, frame.f_lineno)
-        if self.currentbp is not 0:
+        if self.currentbp != 0:
             out_info = 'BREAK ' + out_info
             self.currentbp = 0
         else:
