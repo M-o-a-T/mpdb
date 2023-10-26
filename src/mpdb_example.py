@@ -1,6 +1,11 @@
+"""
+debug example
+"""
+from __future__ import annotations
+
 from mpdb import Mpdb
 
-
+# ruff:noqa:D103
 debugger = Mpdb()
 
 # debugger.handle_user_command('Set breakpoints\n')
@@ -13,11 +18,11 @@ some_value = 0
 
 
 def test():
-    print('test1')
+    print("test1")
 
 
 def test2():
-    print('test2')
+    print("test2")
 
 
 def more_test(arg1, arg2, arg3):
@@ -38,7 +43,7 @@ def test_function():
     r = 0
     i = 0
     test(), test2()
-    more_test(1, '2', 3.1)
+    more_test(1, "2", 3.1)
     while i < 3:
         r += i
         i += 1

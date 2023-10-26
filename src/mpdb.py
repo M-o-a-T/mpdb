@@ -1,6 +1,20 @@
+"""
+A rudimentary debugger for MicroPython.
+"""
+from __future__ import annotations
+
 import gc
 import sys
 
+# Typing
+
+from typing import TYPE_CHECKING  # isort:skip
+
+if TYPE_CHECKING:
+    from typing import ClassVar
+
+
+# ruff: noqa:D101,D102,D103
 
 class MpdbQuit(Exception):
     pass
@@ -21,16 +35,16 @@ class Mbdb:
         self._set_stopinfo(None, None)
         self.curframe = None
 
-    def run(self, cmd):
+    def run(self, cmd):  # noqa:ARG002
         self.reset()
 
     def trace_dispatch(self, frame, event, arg):
         self.curframe = frame
         if self.quitting:
             return  # None
-        if event == 'line':
+        if event == "line":
             return self.dispatch_line(frame)
-        if event == 'call':
+        if event == "call":
             return self.dispatch_call(frame, arg)
         # if event == 'return':
         #     return self.dispatch_return(frame, arg)
@@ -105,7 +119,7 @@ class Mbdb:
         If none were set, return an error message.
         """
         if not self.breaks:
-            return 'There are no breakpoints'
+            return "There are no breakpoints"
         for bp in Breakpoint.bpbynumber:
             if bp:
                 bp.deleteMe()
@@ -171,9 +185,9 @@ class Mbdb:
         If no breakpoints were set, return an error message.
         """
         if filename not in self.breaks:
-            return 'There are no breakpoints in %s' % filename
+            return "There are no breakpoints in %s" % filename
         if lineno not in self.breaks[filename]:
-            return 'There is no breakpoint at %s:%d' % (filename, lineno)
+            return "There is no breakpoint at %s:%d" % (filename, lineno)
         for bp in Breakpoint.bplist[filename, lineno][:]:
             bp.deleteMe()
         self._prune_breaks(filename, lineno)
@@ -196,17 +210,17 @@ class Mbdb:
         raise a ValueError.
         """
         if not arg:
-            raise ValueError('Breakpoint number expected')
+            raise ValueError("Breakpoint number expected")
         try:
             number = int(arg)
         except ValueError:
-            raise ValueError('Non-numeric breakpoint number %s' % arg) from None
+            raise ValueError("Non-numeric breakpoint number %s" % arg) from None
         try:
             bp = Breakpoint.bpbynumber[number]
         except IndexError:
-            raise ValueError('Breakpoint number %d out of range' % number) from None
+            raise ValueError("Breakpoint number %d out of range" % number) from None
         if bp is None:
-            raise ValueError('Breakpoint %d already deleted' % number)
+            raise ValueError("Breakpoint %d already deleted" % number)
         return bp
 
     def _prune_breaks(self, filename, lineno):
@@ -274,7 +288,7 @@ def effective(file, line, frame):
             try:
                 # Even tho MicroPython eval statement is limited
                 # to just globals it is till useful
-                val = eval(b.cond, frame.f_globals, frame.f_globals)
+                val = eval(b.cond, frame.f_globals, frame.f_globals)  # noqa:PGH001,S307
                 if val:
                     if b.ignore > 0:
                         b.ignore -= 1
@@ -308,8 +322,8 @@ class Breakpoint:
     # you cannot have more than one active Bdb instance.
 
     next = 1  # Next bp to be assigned
-    bplist = {}  # indexed by (file, lineno) tuple
-    bpbynumber = [None]  # Each entry is None or an instance of Bpt
+    bplist:ClassVar[dict] = {}  # indexed by (file, lineno) tuple
+    bpbynumber:ClassVar[list] = [None]  # Each entry is None or an instance of Bpt
 
     # index 0 is unused, except for marking an
     # effective break .... see effective()
@@ -368,45 +382,36 @@ class Breakpoint:
         status, file:line position, break condition, number of times to
         ignore, and number of times hit.
         """
-        if self.temporary:
-            disp = 'del  '
-        else:
-            disp = 'keep '
-        if self.enabled:
-            disp = disp + 'yes  '
-        else:
-            disp = disp + 'no   '
-        ret = '%-4dbreakpoint   %s at %s:%d' % (self.number, disp, self.file, self.line)
+        disp = "del  " if self.temporary else "keep "
+        disp += "yes  " if self.enabled else "no   "
+        ret = f"{self.number :-4d}breakpoint   {disp} at {self.file}:{self.line}"
         if self.cond:
-            ret += '\n\tstop only if %s' % (self.cond,)
+            ret += f"\n\tstop only if {self.cond}"
         if self.ignore:
-            ret += '\n\tignore next %d hits' % (self.ignore,)
+            ret += f"\n\tignore next {self.ignore} hits"
         if self.hits:
-            if self.hits > 1:
-                ss = 's'
-            else:
-                ss = ''
-            ret += '\n\tbreakpoint already hit %d time%s' % (self.hits, ss)
+            ss = "s" if self.hits > 1 else ""
+            ret += f"\n\tbreakpoint already hit {self.hits} time{ss}"
         return ret
 
     def __str__(self):
         """Return a condensed description of the breakpoint."""
-        return 'breakpoint %s at %s:%s' % (self.number, self.file, self.line)
+        return f"breakpoint {self.number} at {self.file}:{self.line}"
 
 
 # Adapted from: https://github.com/micropython/micropython-lib/blob/master/cmd/cmd.py
 class Cmd:
-    IDENTCHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
-    PROMPT = '(Mpdb) '
+    IDENTCHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+    PROMPT = "(Mpdb) "
     doc_leader = ""
     doc_header = "Documented commands (type help <topic>):"
     misc_header = "Miscellaneous help topics:"
     undoc_header = "Undocumented commands:"
     nohelp = "*** No help on %s"
-    ruler = '='
+    ruler = "="
 
     def __init__(self):
-        self.lastcmd = ''
+        self.lastcmd = ""
 
     def cmdloop(self):
         try:
@@ -415,7 +420,7 @@ class Cmd:
                 try:
                     line = input(self.PROMPT)
                 except EOFError:
-                    line = 'EOF'
+                    line = "EOF"
                 stop = self.onecmd(line)
         finally:
             pass
@@ -430,13 +435,13 @@ class Cmd:
         if cmd is None:
             return self.default(line)
         self.lastcmd = line
-        if line == 'EOF':
-            self.lastcmd = ''
-        if cmd == '':
+        if line == "EOF":
+            self.lastcmd = ""
+        if cmd == "":
             return self.default(line)
         else:
             try:
-                func = getattr(self, 'do_' + cmd)
+                func = getattr(self, "do_" + cmd)
             except AttributeError:
                 return self.default(line)
             return func(arg)
@@ -449,11 +454,11 @@ class Cmd:
         line = line.strip()
         if not line:
             return None, None, line
-        elif line[0] == '?':
-            line = 'help ' + line[1:]
-        elif line[0] == '!':
-            if hasattr(self, 'do_shell'):
-                line = 'shell ' + line[1:]
+        elif line[0] == "?":
+            line = "help " + line[1:]
+        elif line[0] == "!":
+            if hasattr(self, "do_shell"):
+                line = "shell " + line[1:]
             else:
                 return None, None, line
         i, n = 0, len(line)
@@ -467,7 +472,7 @@ class Cmd:
         If this method is not overridden, it prints an error message and
         returns.
         """
-        sys.stdout.write('*** Unknown syntax: %s\n' % line)
+        sys.stdout.write("*** Unknown syntax: %s\n" % line)
 
     def emptyline(self):
         """Called when an empty line is entered in response to the prompt.
@@ -487,7 +492,7 @@ class Cmd:
         if arg:
             # XXX check arg syntax
             try:
-                func = getattr(self, 'help_' + arg)
+                func = getattr(self, "help_" + arg)
             except AttributeError:
                 sys.stdout.write("%s\n" % str(self.nohelp % (arg,)))
                 return
@@ -498,13 +503,13 @@ class Cmd:
             cmds_undoc = []
             help = {}
             for name in names:
-                if name[:5] == 'help_':
+                if name[:5] == "help_":
                     help[name[5:]] = 1
             names.sort()
             # There can be duplicates if routines overridden
-            prevname = ''
+            prevname = ""
             for name in names:
-                if name[:3] == 'do_':
+                if name[:3] == "do_":
                     if name == prevname:
                         continue
                     prevname = name
@@ -519,7 +524,7 @@ class Cmd:
             self.print_topics(self.misc_header, list(help.keys()), 15, 80)
             self.print_topics(self.undoc_header, cmds_undoc, 15, 80)
 
-    def print_topics(self, header, cmds, cmdlen, maxcol):
+    def print_topics(self, header, cmds, cmdlen, maxcol):  # noqa:ARG002
         if cmds:
             sys.stdout.write("%s\n" % str(header))
             if self.ruler:
@@ -535,11 +540,11 @@ def print_stacktrace(frame, level=0):
         % (
             level,
             "  ",
-            frame.f_globals['__name__'],
+            frame.f_globals["__name__"],
             frame.f_code.co_name,
             frame.f_code.co_filename,
             frame.f_lineno,
-        )
+        ),
     )
 
     if frame.f_back:
@@ -558,13 +563,13 @@ class Mpdb(Mbdb, Cmd):
         filename = None
         lineno = None
         cond = None
-        comma = arg.find(',')
+        comma = arg.find(",")
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma + 1 :].lstrip()
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
-        colon = arg.rfind(':')
+        colon = arg.rfind(":")
         if colon >= 0:
             filename = arg[:colon].rstrip()
             print(filename)
@@ -584,19 +589,19 @@ class Mpdb(Mbdb, Cmd):
         """
         if not arg:
             try:
-                reply = input('Clear all breaks? ')
+                reply = input("Clear all breaks? ")
             except EOFError:
-                reply = 'no'
+                reply = "no"
             reply = reply.strip().lower()
-            if reply in ('y', 'yes'):
+            if reply in ("y", "yes"):
                 bplist = [bp for bp in Breakpoint.bpbynumber if bp]
                 self.clear_all_breaks()
                 for bp in bplist:
-                    self.message('Deleted %s' % bp)
+                    self.message("Deleted %s" % bp)
             return
-        if ':' in arg:
+        if ":" in arg:
             # Make sure it works for "clear C:\foo\bar.py:12"
-            i = arg.rfind(':')
+            i = arg.rfind(":")
             filename = arg[:i]
             arg = arg[i + 1 :]
             try:
@@ -610,7 +615,7 @@ class Mpdb(Mbdb, Cmd):
                 self.error(err)
             else:
                 for bp in bplist:
-                    self.message('Deleted %s' % bp)
+                    self.message("Deleted %s" % bp)
             return
         numberlist = arg.split()
         for i in numberlist:
@@ -620,11 +625,11 @@ class Mpdb(Mbdb, Cmd):
                 self.error(err)
             else:
                 self.clear_bpbynumber(i)
-                self.message('Deleted %s' % bp)
+                self.message("Deleted %s" % bp)
 
     do_cl = do_clear  # 'c' is already an abbreviation for 'continue'
 
-    def do_step(self, arg):
+    def do_step(self, arg):  # noqa:ARG002
         """s(tep)
         Execute the current line, stop at the first possible occasion
         (either in a function that is called or in the current
@@ -635,7 +640,7 @@ class Mpdb(Mbdb, Cmd):
 
     do_s = do_step
 
-    def do_next(self, arg):
+    def do_next(self, arg):  # noqa:ARG002
         """n(ext)
         Continue execution until the next line in the current function
         is reached or it returns.
@@ -645,7 +650,7 @@ class Mpdb(Mbdb, Cmd):
 
     do_n = do_next
 
-    def do_continue(self, arg):
+    def do_continue(self, arg):  # noqa:ARG002
         """c(ont(inue))
         Continue execution, only stop when a breakpoint is encountered.
         """
@@ -654,7 +659,7 @@ class Mpdb(Mbdb, Cmd):
 
     do_c = do_cont = do_continue
 
-    def do_where(self, arg):
+    def do_where(self, arg):  # noqa:ARG002
         """w(here)
         Print a stack trace.
         """
@@ -675,10 +680,10 @@ class Mpdb(Mbdb, Cmd):
             try:
                 lineno = int(arg)
             except ValueError:
-                self.error('Error in argument: %r' % arg)
+                self.error("Error in argument: %r" % arg)
                 return
             if lineno <= self.curframe.f_lineno:
-                self.error('"until" line number is smaller than current ' 'line number')
+                self.error('"until" line number is smaller than current line number')
                 return
         else:
             lineno = None
@@ -694,43 +699,43 @@ class Mpdb(Mbdb, Cmd):
         print(msg)
 
     def error(self, msg):
-        print('***', msg)
+        print("***", msg)
 
-    def do_quit(self, arg):
+    def do_quit(self, arg):  # noqa:ARG002
         self.set_quit()
         return 1
 
     do_q = do_quit
 
-    def do_mem_free(self, arg):
-        print('Memory Free: ', gc.mem_free())
+    def do_mem_free(self, arg):  # noqa:ARG002
+        print("Memory Free: ", gc.mem_free())
 
     do_mf = do_mem_free
 
-    def do_mem_alloc(self, arg):
-        print('Memory Allocated: ', gc.mem_alloc())
+    def do_mem_alloc(self, arg):  # noqa:ARG002
+        print("Memory Allocated: ", gc.mem_alloc())
 
     do_ma = do_mem_alloc
 
-    def do_collect(self, arg):
+    def do_collect(self, arg):  # noqa:ARG002
         gc.collect()
         print(
-            'Garbage Collected!',
+            "Garbage Collected!",
         )
 
     def do_p(self, arg):
         repr(self._getval(arg))
 
     def _getval(self, arg):
-        return eval(arg, self.curframe.f_globals, self.curframe.f_globals)
+        return eval(arg, self.curframe.f_globals, self.curframe.f_globals) # noqa:PGH001,S307
 
     def user_line(self, frame):
-        out_info = '{}:{}'.format(frame.f_code.co_filename, frame.f_lineno)
+        out_info = f"{frame.f_code.co_filename}:{frame.f_lineno}"
         if self.currentbp != 0:
-            out_info = 'BREAK ' + out_info
+            out_info = "BREAK " + out_info
             self.currentbp = 0
         else:
-            out_info = 'STOP ' + out_info
+            out_info = "STOP " + out_info
         print(out_info)
         self.cmdloop()
 
@@ -738,8 +743,9 @@ class Mpdb(Mbdb, Cmd):
 _db = None
 
 
-def breakpoint():
-    global _db
+def breakpoint():  # noqa:A001
+    "mimic CPython's `breakpoint`"
+    global _db  # noqa:PLW0603
     if _db is None:
         _db = Mpdb()
     _db.set_trace()
