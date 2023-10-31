@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 # ruff: noqa:D101,D102,D103
 
+
 class MpdbQuit(Exception):
     pass
 
@@ -322,8 +323,8 @@ class Breakpoint:
     # you cannot have more than one active Bdb instance.
 
     next = 1  # Next bp to be assigned
-    bplist:ClassVar[dict] = {}  # indexed by (file, lineno) tuple
-    bpbynumber:ClassVar[list] = [None]  # Each entry is None or an instance of Bpt
+    bplist: ClassVar[dict] = {}  # indexed by (file, lineno) tuple
+    bpbynumber: ClassVar[list] = [None]  # Each entry is None or an instance of Bpt
 
     # index 0 is unused, except for marking an
     # effective break .... see effective()
@@ -727,7 +728,7 @@ class Mpdb(Mbdb, Cmd):
         repr(self._getval(arg))
 
     def _getval(self, arg):
-        return eval(arg, self.curframe.f_globals, self.curframe.f_globals) # noqa:PGH001,S307
+        return eval(arg, self.curframe.f_globals, self.curframe.f_globals)  # noqa:PGH001,S307
 
     def user_line(self, frame):
         out_info = f"{frame.f_code.co_filename}:{frame.f_lineno}"

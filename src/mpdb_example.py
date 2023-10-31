@@ -31,7 +31,7 @@ def more_test(arg1, arg2, arg3):
 
 
 def test_function():
-    global some_value
+    global some_value  # noqa:PLW0603
     r = 0
     for i in range(3):
         print(some_value)
